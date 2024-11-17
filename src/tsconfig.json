@@ -1,8 +1,0 @@
-{
-    "compilerOptions": {
-      "lib": ["es2015", "dom"],  // Add es2015 or later
-      "target": "es2015",         // Make sure the target is at least ES2015
-      "module": "esnext",         // Optional: Set the module system if needed
-      "strict": true              // Optional: Enables strict type checking
-    }
-  }
