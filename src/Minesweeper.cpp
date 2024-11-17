@@ -1,18 +1,24 @@
-#include "Minesweeper.h"
+#include "minesweeper.h"
 #include <stdexcept>
 #include <iostream>
 using namespace Minesweeper;
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten/bind.h>
 	using namespace emscripten;
-
 	// std::shared_ptr<Minesweeper::MineField> createMyClass(int width, int height) {
 	// 	return std::make_shared<Minesweeper::MineField>(width, height);
 	// }
-
+    
 	// Binding code
 	EMSCRIPTEN_BINDINGS(minefield) {
+        value_object<Position>("Position")
+			.field("x", &Position::x)
+			.field("y", &Position::y);
+
+		value_object<Tile>("Tile")
+			.field("position", &Tile::position)
+			.field("value", &Tile::value);
+
 		class_<Minesweeper::MineField>("MineField")
 		    .smart_ptr<std::shared_ptr<Minesweeper::MineField>>("shared_ptr<Minesweeper::MineField>")
 			//.smart_ptr_constructor("MineField(width, height)", &std::make_shared<Minesweeper::MineField, int, int>)
@@ -24,9 +30,15 @@ using namespace Minesweeper;
 			//.constructor<int, int>("MineField(width, height)")
 			//.constructor<int, int, int, int, int>()
 			.function("sweep(x, y)", &Minesweeper::MineField::sweep)
-			.function("toString", select_overload<std::string() const>(&Minesweeper::MineField::toString))
-			.property("seed", &Minesweeper::MineField::getSeed)
-			;
+			.function("flag(x, y)", &Minesweeper::MineField::flag)
+			.function("clear", &Minesweeper::MineField::clear)
+			.function("revealGrid", &Minesweeper::MineField::revealGrid)
+			.function("getWidth", &Minesweeper::MineField::getWidth)
+			.function("getHeight", &Minesweeper::MineField::getHeight)
+			.function("getSeed", &Minesweeper::MineField::getSeed)
+			.function("getAt(x, y)", &Minesweeper::MineField::getAt)
+			.function("setAt(x, y)", &Minesweeper::MineField::setAt)
+			.function("toString", select_overload<std::string() const>(&Minesweeper::MineField::toString));
 
 		//function("createMyClass", createMyClass);
 	}
@@ -36,7 +48,6 @@ MineField::MineField(int width, int height) : MineField(width, height, (int)(wid
 
 Minesweeper::MineField::MineField(int width, int height, int mineCount, int seed, int spawnGuardRadius)
 {
-	std::cout << "ctor" << "\n";
 	if (spawnGuardRadius - 1 > width || spawnGuardRadius - 1 > height) {
 		throw std::invalid_argument("spawn_guard_radius greater than grid dimenisons");
 	}
@@ -53,18 +64,20 @@ Minesweeper::MineField::MineField(int width, int height, int mineCount, int seed
 
 MineField::~MineField()
 {
-	std::cout << "dtor" << "\n";
+
 }
 
-int MineField::sweep(int x, int y)
+SweptTiles MineField::sweep(int x, int y)
 {
 	if (x < 0 || x >= width) {
-		throw std::invalid_argument("sweep x position out-of-bounds");
+		throw std::out_of_range("sweep x position out-of-bounds");
 	}
 
 	if (y < 0 || y >= height) {
-		throw std::invalid_argument("sweep x position out-of-bounds");
+		throw std::out_of_range("sweep x position out-of-bounds");
 	}
+
+    SweptTiles swept_tiles = createSweptTiles();
 
 	if (firstSweep) {
 		firstSweep = false;
@@ -74,43 +87,51 @@ int MineField::sweep(int x, int y)
 	int tile_value = getAt(x, y);;
 
 	// sweep shortcut
-	if (tile_value >=0 && tile_value <=9) {
-		TilesArray nearby;
-		int count = getNearby(x, y, nearby);
+	// if (tile_value >=0 && tile_value <=9) {
+	// 	NearbyTiles nearby;
+	// 	int count = getNearby(x, y, nearby);
 
-		for (size_t i = 0; i < count; ++i) {
-			Tile& tile = nearby[i];
-			if (!isFlagged(tile.value)) {
-				sweepQueue.push(tile.position);
-			}
-		}
-	}
-	else {
-		sweepQueue.push(Position{ x, y });
-	}
+	// 	for (size_t i = 0; i < count; ++i) {
+	// 		Tile& tile = nearby[i];
+	// 		if (!isFlagged(tile.value)) {
+	// 			sweepQueue.push(tile.position);
+	// 		}
+	// 	}
+	// }
+	// else {
+	// 	sweepQueue.push(Position{ x, y });
+	// }
 
+    sweepQueue.push(Position{ x, y });
+    
 	while (!sweepQueue.empty()) {
 		Position curr_Position = sweepQueue.front();
 		sweepQueue.pop();
+		
 
 		int& curr_x = curr_Position.x;
 		int& curr_y = curr_Position.y;
 
 		tile_value = getAt(curr_x, curr_y);
-
-		if (isBomb(tile_value)) {
-			revealGrid();
-			return tile_value;
-		}
+        
 
 		if (tile_value == 0)
 			continue;
 
-		// if tile is tile_up and not flagged
+		// if tile is up and not flagged
 		if (isTileUp(tile_value) && !isFlagged(tile_value)) {
 			// reveal tile
 			tile_value = tile_value - TILE_UP_OFFSET;
 			setAt(curr_x, curr_y, tile_value);
+
+			// add tile to swept list.
+            push_back(swept_tiles, Tile{ curr_Position, tile_value });
+
+			// check if it was bomb, if so then reveal grid
+            if (isBomb(tile_value)) {
+				revealGrid();
+				return swept_tiles;
+			}
 
 			//if tile has no bombs nearby, sweep nearby tiles
 			if (tile_value == 0) {
@@ -138,7 +159,7 @@ int MineField::sweep(int x, int y)
 		}
 	}
 
-	return getAt(x, y);
+	return swept_tiles;
 }
 
 int MineField::flag(int x, int y)
@@ -202,7 +223,7 @@ void MineField::populateGrid(int first_x, int first_y)
 int MineField::getNearbyBombs(int x, int y) const
 {
 	int nearby_bombs = 0;
-	TilesArray nearby;
+	NearbyTiles nearby;
 	int count = getNearby(x, y, nearby);
 
 	for (size_t i = 0; i < count; ++i) {
@@ -215,7 +236,7 @@ int MineField::getNearbyBombs(int x, int y) const
 	return nearby_bombs;
 }
 
-int MineField::getNearby(int x, int y, TilesArray& nearby) const
+int MineField::getNearby(int x, int y, NearbyTiles& nearby) const
 {
 	int count = 0;
 	if (y + 1 < height) {

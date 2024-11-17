@@ -1,0 +1,25 @@
+{
+  "name": "test_ts",
+  "version": "1.0.0",
+  "description": "Test minesweeper typescript module",
+  "main": "minesweeper_test.ts",
+  "type": "module",
+  "scripts": {
+    "start": "tsx ./minesweepr_test.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "buffman23",
+  "license": "ISC",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "test_ts": "file:",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.9.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5"
+  }
+}

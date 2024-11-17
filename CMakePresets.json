@@ -1,0 +1,87 @@
+{     "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 19
+    },
+    "configurePresets": [
+        {
+            "name": "emscripten",
+            "generator": "Ninja",
+            "binaryDir": "./build-emscripten",
+            "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "default",
+            "generator": "Ninja",
+            "binaryDir": "./build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "debug",
+            "generator": "Ninja",
+            "binaryDir": "./build-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "x64",
+            "generator": "Ninja",
+            "binaryDir": "./build-x64",
+            "cacheVariables": {
+                "CMAKE_GENERATOR_PLATFORM": "x64",
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "build-emscripten",
+            "configurePreset": "emscripten",
+            "targets": [
+                "all"
+            ],
+            "jobs": 4,
+            "configuration": "Release"
+        },
+        {
+            "name": "build-release",
+            "configurePreset": "default",
+            "targets": [
+                "all"
+            ],
+            "configuration": "Release",
+            "jobs": 4
+        },
+        {
+            "name": "build-debug",
+            "configurePreset": "debug",
+            "targets": [
+                "all"
+            ],
+            "configuration": "Debug",
+            "jobs": 4
+        },
+        {
+            "name": "build-x64",
+            "configurePreset": "x64",
+            "targets": [
+                "all"
+            ],
+            "configuration": "Release",
+            "jobs": 4
+        },
+        {
+            "name": "clean",
+            "configurePreset": "default",
+            "targets": [
+                "clean"
+            ]
+        }
+    ]
+}
