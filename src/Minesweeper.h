@@ -25,11 +25,11 @@ namespace Minesweeper
 		int value;
 	};
 
-	#ifdef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
 	typedef emscripten::val SweptTiles;
-	#else
+#else
 	typedef std::vector<Tile> SweptTiles;
-	#endif
+#endif
 
 	/**
 	 * The `MineField` class manages the state of the minefield, including the grid, mines, flags,
@@ -39,7 +39,7 @@ namespace Minesweeper
 	class MineField
 	{
 	public:
-	    MineField(int width, int height);
+		MineField(int width, int height);
 
 		MineField(int width, int height, int num_of_mines, int seed = 0, int spawnGuardRadius = 1);
 
@@ -72,7 +72,7 @@ namespace Minesweeper
 	private:
 		typedef std::array<Tile, 8> NearbyTiles;
 
-		static constexpr char symbols[11] = { ' ', '1', '2', '3', '4', '5', '6', '7', '8', 'x' , 'o' };
+		static constexpr char symbols[11] = {' ', '1', '2', '3', '4', '5', '6', '7', '8', 'x', 'o'};
 
 		std::vector<int> grid;
 		std::queue<Position> sweepQueue;
@@ -81,25 +81,27 @@ namespace Minesweeper
 		int seed;
 		int mineCount;
 		int spawnGuardRadius;
-		bool firstSweep;		
+		bool firstSweep;
 
-		#ifdef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
 		SweptTiles createSweptTiles()
 		{
 			return emscripten::val::array();
 		}
-		void push_back(SweptTiles& sweptTiles, const Tile& tile) {
+		void push_back(SweptTiles &sweptTiles, const Tile &tile)
+		{
 			sweptTiles.call<void>("push", tile);
 		}
-		#else
+#else
 		SweptTiles createSweptTiles()
 		{
 			return SweptTiles();
 		}
-		void push_back(SweptTiles& sweptTiles, const Tile& tile) {
+		void push_back(SweptTiles &sweptTiles, const Tile &tile)
+		{
 			sweptTiles.push_back(tile);
 		}
-		#endif
+#endif
 
 		void populateGrid(int first_x, int first_y);
 
